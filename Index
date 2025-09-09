@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Inflamm AI - Advanced Therapy Assistant</title>
+    <link rel="stylesheet" href="styles/main.css">
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='32' height='32' viewBox='0 0 32 32'%3E%3Ccircle cx='16' cy='16' r='15' fill='%23E17B47' stroke='%23D4693A' stroke-width='1'/%3E%3Ccircle cx='16' cy='16' r='12' fill='%23F5F1E8'/%3E%3Cg transform='translate(16, 16)'%3E%3Ccircle cx='0' cy='-3' r='2.5' fill='%23E17B47'/%3E%3Cellipse cx='0' cy='2' rx='3' ry='5' fill='%23E17B47'/%3E%3Cpath d='M -3 -1 Q -5 1 -4 3 Q -3 2 -3 1' fill='%23E17B47'/%3E%3Cpath d='M 3 -1 Q 5 1 4 3 Q 3 2 3 1' fill='%23E17B47'/%3E%3Cpath d='M -1.5 0 C -1.5 -1 -0.5 -1.5 0 -0.5 C 0.5 -1.5 1.5 -1 1.5 0 C 1.5 1 0 2.5 0 2.5 C 0 2.5 -1.5 1 -1.5 0 Z' fill='white'/%3E%3C/g%3E%3C/svg%3E">
+</head>
+<body>
+    <!-- Desktop Environment -->
+    <div class="desktop">
+        <!-- Taskbar -->
+        <div class="taskbar">
+            <button class="start-btn" onclick="toggleStartMenu()">
+                <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 16 16'%3E%3Crect width='16' height='16' fill='%23c0c0c0'/%3E%3Cpath d='M2 2h12v12H2z' fill='%23008080'/%3E%3Ctext x='8' y='11' text-anchor='middle' fill='white' font-size='8' font-family='ms-sans-serif'%3EIA%3C/text%3E%3C/svg%3E" alt="">
+                Start
+            </button>
+            <div class="taskbar-apps">
+                <div class="taskbar-app active" onclick="restoreWindow('mainWindow')">Inflamm AI - Therapy Assistant</div>
+            </div>
+            <div class="system-tray">
+                <span class="time" id="current-time">12:00 PM</span>
+            </div>
+        </div>
+
+        <!-- Start Menu -->
+        <div class="start-menu" id="startMenu">
+            <div class="start-menu-header">
+                <div class="user-info">
+                                         <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='32' height='32' viewBox='0 0 32 32'%3E%3Ccircle cx='16' cy='16' r='15' fill='%23E17B47' stroke='%23D4693A' stroke-width='1'/%3E%3Ccircle cx='16' cy='16' r='12' fill='%23F5F1E8'/%3E%3Cg transform='translate(16, 16)'%3E%3Ccircle cx='0' cy='-3' r='2.5' fill='%23E17B47'/%3E%3Cellipse cx='0' cy='2' rx='3' ry='5' fill='%23E17B47'/%3E%3Cpath d='M -3 -1 Q -5 1 -4 3 Q -3 2 -3 1' fill='%23E17B47'/%3E%3Cpath d='M 3 -1 Q 5 1 4 3 Q 3 2 3 1' fill='%23E17B47'/%3E%3Cpath d='M -1.5 0 C -1.5 -1 -0.5 -1.5 0 -0.5 C 0.5 -1.5 1.5 -1 1.5 0 C 1.5 1 0 2.5 0 2.5 C 0 2.5 -1.5 1 -1.5 0 Z' fill='white'/%3E%3C/g%3E%3C/svg%3E" alt="Profile">
+                    <span>Patient Portal</span>
+                </div>
+            </div>
+            <div class="start-menu-items">
+                <div class="menu-item" onclick="openWindow('symptom-checker')">
+                    <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 16 16'%3E%3Crect fill='%23c0c0c0' width='16' height='16'/%3E%3C!-- Head profile outline --%3E%3Cpath d='M4 5.5 Q4 4 5 4 Q6.2 4 6.2 5.5 L6.2 9 Q6.2 10.5 5.5 11 Q4.8 11.5 4 11 L4 5.5 Z' fill='none' stroke='%23E17B47' stroke-width='0.5'/%3E%3C!-- Pill with line --%3E%3Ccircle cx='3.2' cy='3.2' r='1.8' fill='%23E17B47'/%3E%3Cline x1='2' y1='4.4' x2='4.4' y2='2' stroke='%23F5F1E8' stroke-width='0.5'/%3E%3C!-- Clipboard --%3E%3Crect x='9' y='2.5' width='5' height='6.5' fill='%23F5F1E8' stroke='%23E17B47' stroke-width='0.3'/%3E%3Crect x='10.5' y='1.8' width='1.5' height='1.2' fill='%23E17B47' rx='0.3'/%3E%3C!-- Checkmarks --%3E%3Cpath d='M9.5 4 L10.2 4.7 L11.2 3.7' stroke='%23E17B47' stroke-width='0.3' fill='none'/%3E%3Cpath d='M9.5 5.5 L10.2 6.2 L11.2 5.2' stroke='%23E17B47' stroke-width='0.3' fill='none'/%3E%3Cpath d='M9.5 7 L10.2 7.7 L11.2 6.7' stroke='%23E17B47' stroke-width='0.3' fill='none'/%3E%3C/svg%3E">
+                    Symptom Checker
+                </div>
+                <div class="menu-item" onclick="openWindow('therapy-recommendations')">
+                    <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 16 16'%3E%3Crect fill='%23c0c0c0' width='16' height='16'/%3E%3C!-- Head profile silhouette --%3E%3Cpath d='M2.5 4 Q2.5 2.5 3.5 2.5 Q4.5 3 4.5 4.5 L4.5 7 Q4.5 8.5 4 9 Q3.5 9.5 3 9 Q2.5 8.5 2.5 7 L2.5 4 Z' fill='%23E17B47'/%3E%3C!-- Checkmark circle --%3E%3Ccircle cx='7' cy='3.5' r='1.8' fill='%23E17B47'/%3E%3Ccircle cx='7' cy='3.5' r='1.2' fill='%23F5F1E8'/%3E%3Cpath d='M6.2 3.5 L6.8 4.1 L7.8 3.1' stroke='%23E17B47' stroke-width='0.3' fill='none'/%3E%3C!-- Pill capsule --%3E%3Cellipse cx='5.5' cy='8' rx='1.2' ry='0.6' fill='%23E17B47' transform='rotate(45 5.5 8)'/%3E%3Cpath d='M4.8 7.3 Q5.5 6.6 6.2 7.3 Q5.5 8 4.8 7.3' fill='%23F5F1E8'/%3E%3C!-- Lab flask --%3E%3Cpath d='M10.5 4.8 L10.5 3.2 L12 3.2 L12 4.8 L12.8 8 Q12.8 8.8 12 8.8 L10.5 8.8 Q9.7 8.8 9.7 8 L10.5 4.8 Z' fill='%23E17B47'/%3E%3Cpath d='M10.5 7.2 L12 7.2 Q12 8 11.25 8 L10.5 8 Q10.5 7.2 10.5 7.2' fill='%23F5F1E8'/%3E%3Crect x='11' y='2.4' width='0.6' height='1.2' fill='%23E17B47'/%3E%3Ccircle cx='10.8' cy='6.4' r='0.2' fill='%23F5F1E8'/%3E%3Ccircle cx='11.4' cy='6.7' r='0.15' fill='%23F5F1E8'/%3E%3C/svg%3E">
+                    Therapy Recommendations
+                </div>
+                <div class="menu-item" onclick="openWindow('protocol-generator')">
+                    <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 16 16'%3E%3Crect fill='%23c0c0c0' width='16' height='16'/%3E%3C!-- Calendar with checkmark --%3E%3Crect x='1.5' y='3.2' width='4' height='3.2' fill='%23E17B47' stroke='%23D4693A' stroke-width='0.2' rx='0.3'/%3E%3Crect x='1.8' y='4' width='3.4' height='1.9' fill='%23F5F1E8'/%3E%3Crect x='2.2' y='2.4' width='0.3' height='1.3' fill='%23E17B47'/%3E%3Crect x='4.6' y='2.4' width='0.3' height='1.3' fill='%23E17B47'/%3E%3Cpath d='M2.5 4.8 L3 5.3 L4.2 4.1' stroke='%23E17B47' stroke-width='0.3' fill='none'/%3E%3C!-- Clock --%3E%3Ccircle cx='7.2' cy='4' r='1.9' fill='%23E17B47'/%3E%3Ccircle cx='7.2' cy='4' r='1.4' fill='%23F5F1E8'/%3E%3Cline x1='7.2' y1='4' x2='7.2' y2='2.9' stroke='%23E17B47' stroke-width='0.3'/%3E%3Cline x1='7.2' y1='4' x2='8' y2='4.5' stroke='%23E17B47' stroke-width='0.2'/%3E%3Ccircle cx='7.2' cy='4' r='0.2' fill='%23E17B47'/%3E%3C!-- Clipboard with checklist --%3E%3Crect x='10.4' y='5.6' width='3.2' height='4.8' fill='%23F5F1E8' stroke='%23E17B47' stroke-width='0.3' rx='0.2'/%3E%3Crect x='11.5' y='4.8' width='1' height='1.3' fill='%23E17B47' rx='0.2'/%3E%3Ccircle cx='12' cy='5.4' r='0.15' fill='%23F5F1E8'/%3E%3C!-- Checkmarks --%3E%3Cpath d='M10.9 7.2 L11.1 7.4 L11.7 6.8' stroke='%23E17B47' stroke-width='0.2' fill='none'/%3E%3Cline x1='12' y1='7.2' x2='13.1' y2='7.2' stroke='%23E17B47' stroke-width='0.15'/%3E%3Cpath d='M10.9 8.3 L11.1 8.5 L11.7 7.9' stroke='%23E17B47' stroke-width='0.2' fill='none'/%3E%3Cline x1='12' y1='8.3' x2='13.1' y2='8.3' stroke='%23E17B47' stroke-width='0.15'/%3E%3Cpath d='M10.9 9.4 L11.1 9.6 L11.7 9' stroke='%23E17B47' stroke-width='0.2' fill='none'/%3E%3Cline x1='12' y1='9.4' x2='13.1' y2='9.4' stroke='%23E17B47' stroke-width='0.15'/%3E%3C/svg%3E">
+                    Daily Protocol Generator
+                </div>
+                <div class="menu-item" onclick="openWindow('terminal-chat')">
+                    <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 16 16'%3E%3Crect fill='%23c0c0c0' width='16' height='16'/%3E%3C!-- Head profile silhouette --%3E%3Cpath d='M2.4 4 Q2.4 2.4 3.5 2.4 Q4.6 3 4.6 4.5 L4.6 7.2 Q4.6 8.8 4.2 9.6 Q3.8 10.4 3.2 9.6 Q2.4 8.8 2.4 7.2 L2.4 4 Z' fill='%23E17B47'/%3E%3C!-- Speech bubble --%3E%3Crect x='7.2' y='2.4' width='5.6' height='4' fill='%23F5F1E8' stroke='%23E17B47' stroke-width='0.3' rx='1'/%3E%3C!-- Speech bubble tail --%3E%3Cpath d='M7.2 4.8 L4.6 5.6 L7.2 6.4 Z' fill='%23F5F1E8' stroke='%23E17B47' stroke-width='0.3'/%3E%3C!-- AI text --%3E%3Ctext x='10' y='4.2' text-anchor='middle' fill='%23E17B47' font-size='1.3' font-weight='bold' font-family='Arial'%3EAI%3C/text%3E%3C!-- Control sliders --%3E%3Ccircle cx='8.3' cy='5.1' r='0.3' fill='%23E17B47'/%3E%3Cline x1='8.8' y1='5.1' x2='10.9' y2='5.1' stroke='%23E17B47' stroke-width='0.2'/%3E%3Ccircle cx='11.2' cy='5.1' r='0.2' fill='%23F5F1E8' stroke='%23E17B47' stroke-width='0.15'/%3E%3Ccircle cx='8.3' cy='5.8' r='0.3' fill='%23E17B47'/%3E%3Cline x1='8.8' y1='5.8' x2='9.9' y2='5.8' stroke='%23E17B47' stroke-width='0.2'/%3E%3Ccircle cx='10.2' cy='5.8' r='0.2' fill='%23F5F1E8' stroke='%23E17B47' stroke-width='0.15'/%3E%3Cline x1='10.6' y1='5.8' x2='11.7' y2='5.8' stroke='%23E17B47' stroke-width='0.2'/%3E%3C/svg%3E">
+                    AI Therapy Consultant
+                </div>
+            </div>
+        </div>
+
+        <!-- Main Application Window -->
+        <div class="window main-window" id="mainWindow">
+            <div class="title-bar">
+                <div class="title-bar-text">Inflamm AI - Advanced Therapy Assistant</div>
+                <div class="title-bar-controls">
+                    <button class="minimize-btn" aria-label="Minimize" onclick="minimizeWindow('mainWindow')"></button>
+                    <button class="maximize-btn" aria-label="Maximize" onclick="maximizeWindow('mainWindow')"></button>
+                    <button class="close-btn" aria-label="Close" onclick="closeWindow('mainWindow')"></button>
+                </div>
+            </div>
+            
+            <div class="menu-bar">
+                <div class="menu-item">File</div>
+                <div class="menu-item">Edit</div>
+                <div class="menu-item">View</div>
+                <div class="menu-item">Tools</div>
+                <div class="menu-item">Help</div>
+            </div>
+
+            <div class="window-body">
+                <!-- Header Section -->
+                <div class="pharmaceutical-header">
+                    <div class="logo-container">
+                                                 <div class="embossed-logo">
+                             <div class="orange-health-logo">
+                                 <svg width="80" height="80" viewBox="0 0 80 80" xmlns="http://www.w3.org/2000/svg">
+                                     <!-- Outer circle -->
+                                     <circle cx="40" cy="40" r="38" fill="#E17B47" stroke="#D4693A" stroke-width="2"/>
+                                     <!-- Inner cream background -->
+                                     <circle cx="40" cy="40" r="30" fill="#F5F1E8"/>
+                                     <!-- Person with heart -->
+                                     <g transform="translate(40, 40)">
+                                         <!-- Head -->
+                                         <circle cx="0" cy="-8" r="6" fill="#E17B47"/>
+                                         <!-- Body -->
+                                         <ellipse cx="0" cy="5" rx="8" ry="12" fill="#E17B47"/>
+                                         <!-- Arms (curved) -->
+                                         <path d="M -8 -2 Q -12 2 -10 8 Q -8 6 -8 2" fill="#E17B47"/>
+                                         <path d="M 8 -2 Q 12 2 10 8 Q 8 6 8 2" fill="#E17B47"/>
+                                         <!-- Heart in center -->
+                                         <path d="M -3 0 C -3 -2 -1 -3 0 -1 C 1 -3 3 -2 3 0 C 3 2 0 5 0 5 C 0 5 -3 2 -3 0 Z" fill="white"/>
+                                     </g>
+                                 </svg>
+                             </div>
+                         </div>
+                        <div class="brand-info">
+                            <h1>Inflamm AI</h1>
+                            <p class="tagline">Advanced Neuroimmune Therapy Assistant</p>
+                            <div class="pharmaceutical-label">
+                                <span class="batch-number">Batch: v2.4.1</span>
+                                <span class="professional-use">For Professional Use</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Quick Access Panel -->
+                <div class="quick-access-panel">
+                    <h2>Quick Access</h2>
+                    <div class="panel-grid">
+                        <div class="panel-card" onclick="openWindow('symptom-checker')">
+                            <div class="card-icon symptom-icon"></div>
+                            <h3>Symptom Assessment</h3>
+                            <p>AI-powered symptom analysis and inflammation markers</p>
+                            <button class="win95-btn">Launch Tool</button>
+                        </div>
+                        
+                        <div class="panel-card" onclick="openWindow('therapy-recommendations')">
+                            <div class="card-icon therapy-icon"></div>
+                            <h3>Evidence-Based Therapies</h3>
+                            <p>Personalized treatment protocols and supplement guidance</p>
+                            <button class="win95-btn">View Therapies</button>
+                        </div>
+                        
+                        <div class="panel-card" onclick="openWindow('protocol-generator')">
+                            <div class="card-icon protocol-icon"></div>
+                            <h3>Daily Protocol Builder</h3>
+                            <p>Custom daily routines with timing and dosage optimization</p>
+                            <button class="win95-btn">Create Protocol</button>
+                        </div>
+                        
+                        <div class="panel-card" onclick="openWindow('terminal-chat')">
+                            <div class="card-icon terminal-icon"></div>
+                            <h3>AI Therapy Consultant</h3>
+                            <p>Interactive consultation about inflammation, longevity, and protocols</p>
+                            <button class="win95-btn">Start Consultation</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Clinical Information Panel -->
+                <div class="clinical-info">
+                    <div class="info-tabs">
+                        <button class="tab-btn active" onclick="showTab('overview')">Overview</button>
+                        <button class="tab-btn" onclick="showTab('research')">Latest Research</button>
+                        <button class="tab-btn" onclick="showTab('protocols')">Standard Protocols</button>
+                    </div>
+                    
+                    <div class="tab-content active" id="overview">
+                        <h3>Chronic Inflammation & Neuroimmune Health</h3>
+                        <div class="clinical-grid">
+                            <div class="clinical-card">
+                                <h4>Key Biomarkers</h4>
+                                <ul>
+                                    <li>CRP levels (target: &lt;1.0 mg/L)</li>
+                                    <li>IL-6 inflammatory cytokine</li>
+                                    <li>TNF-α markers</li>
+                                    <li>Omega-3 index</li>
+                                </ul>
+                            </div>
+                            <div class="clinical-card">
+                                <h4>Primary Therapeutics</h4>
+                                <ul>
+                                    <li><strong>Rapamycin</strong> - mTOR pathway modulation</li>
+                                    <li><strong>TA-65</strong> - Telomerase activation</li>
+                                    <li><strong>Curcumin</strong> - Natural anti-inflammatory</li>
+                                    <li><strong>Omega-3</strong> - Membrane stabilization</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="tab-content" id="research">
+                        <h3>Recent Clinical Findings</h3>
+                        <div class="research-updates">
+                            <div class="update-item">
+                                <span class="date">2024.01.15</span>
+                                <p>New study shows 40% reduction in inflammatory markers with combination rapamycin + curcumin therapy</p>
+                            </div>
+                            <div class="update-item">
+                                <span class="date">2024.01.08</span>
+                                <p>TA-65 telomerase activation linked to improved cognitive function in 6-month trial</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="tab-content" id="protocols">
+                        <h3>Standardized Treatment Protocols</h3>
+                        <div class="protocol-list">
+                            <div class="protocol-item">
+                                <strong>Mild Inflammation Protocol</strong>
+                                <p>Curcumin 500mg BID + Omega-3 2g daily + lifestyle modifications</p>
+                            </div>
+                            <div class="protocol-item">
+                                <strong>Moderate Inflammation Protocol</strong>
+                                <p>Add intermittent fasting + targeted supplementation + stress management</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Status Bar -->
+                <div class="status-bar">
+                    <div class="status-section">Ready</div>
+                    <div class="status-section">Secure Connection</div>
+                    <div class="status-section">AI Status: Online</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Audio Elements -->
+    <audio id="clickSound" preload="auto">
+        <source src="data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDciUFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjiR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+DyvmEaAjuO3/DRdSMFl.." type="audio/wav">
+    </audio>
+
+    <script src="js/main.js"></script>
+</body>
+</html> 
