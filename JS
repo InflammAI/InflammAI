@@ -1,0 +1,1495 @@
+// Inflamm AI - Advanced Therapy Assistant
+// Windows 95 Pharmaceutical Interface
+
+// Global State Management
+const appState = {
+    openWindows: new Set(['mainWindow']),
+    currentTab: 'overview',
+    startMenuOpen: false,
+    audio: {
+        enabled: true,
+        clickSound: null
+    },
+    user: {
+        symptoms: [],
+        therapies: [],
+        protocols: []
+    }
+};
+
+// Initialize Application
+document.addEventListener('DOMContentLoaded', function() {
+    initializeApp();
+    updateTime();
+    setInterval(updateTime, 1000);
+});
+
+function initializeApp() {
+    // Initialize audio
+    appState.audio.clickSound = document.getElementById('clickSound');
+    
+    // Setup event listeners
+    setupEventListeners();
+    
+    // Show welcome message
+    console.log('Inflamm AI Therapy Assistant Initialized');
+    console.log('Windows 95 Pharmaceutical Interface Active');
+}
+
+function setupEventListeners() {
+    // Click outside start menu to close
+    document.addEventListener('click', function(event) {
+        if (!event.target.closest('.start-menu') && !event.target.closest('.start-btn')) {
+            closeStartMenu();
+        }
+    });
+    
+    // Keyboard shortcuts
+    document.addEventListener('keydown', function(event) {
+        if (event.ctrlKey && event.key === 'Escape') {
+            closeAllWindows();
+        }
+    });
+}
+
+// Audio System
+function playClickSound() {
+    if (appState.audio.enabled && appState.audio.clickSound) {
+        appState.audio.clickSound.currentTime = 0;
+        appState.audio.clickSound.play().catch(() => {
+            // Silently handle audio play failures
+        });
+    }
+}
+
+// Time Display
+function updateTime() {
+    const now = new Date();
+    const timeString = now.toLocaleTimeString([], { 
+        hour: 'numeric', 
+        minute: '2-digit',
+        hour12: true 
+    });
+    const timeElement = document.getElementById('current-time');
+    if (timeElement) {
+        timeElement.textContent = timeString;
+    }
+}
+
+// Start Menu Management
+function toggleStartMenu() {
+    playClickSound();
+    const startMenu = document.getElementById('startMenu');
+    appState.startMenuOpen = !appState.startMenuOpen;
+    
+    if (appState.startMenuOpen) {
+        startMenu.classList.add('active');
+    } else {
+        startMenu.classList.remove('active');
+    }
+}
+
+function closeStartMenu() {
+    const startMenu = document.getElementById('startMenu');
+    startMenu.classList.remove('active');
+    appState.startMenuOpen = false;
+}
+
+// Window Management
+function openWindow(windowId) {
+    playClickSound();
+    closeStartMenu();
+    
+    // Remove existing window if it exists
+    const existingWindow = document.getElementById(windowId);
+    if (existingWindow) {
+        existingWindow.remove();
+    }
+    
+    // Create new window based on type
+    let windowContent;
+    switch (windowId) {
+        case 'symptom-checker':
+            windowContent = createSymptomCheckerWindow();
+            break;
+        case 'therapy-recommendations':
+            windowContent = createTherapyRecommendationsWindow();
+            break;
+        case 'protocol-generator':
+            windowContent = createProtocolGeneratorWindow();
+            break;
+        case 'terminal-chat':
+            windowContent = createTerminalChatWindow();
+            break;
+        default:
+            return;
+    }
+    
+    // Add window to DOM
+    document.querySelector('.desktop').appendChild(windowContent);
+    appState.openWindows.add(windowId);
+    
+    // Make window draggable
+    makeDraggable(windowContent);
+}
+
+function closeWindow(windowId) {
+    playClickSound();
+    const window = document.getElementById(windowId);
+    if (window) {
+        window.style.animation = 'windowClose 0.2s ease-in';
+        setTimeout(() => {
+            window.remove();
+            appState.openWindows.delete(windowId);
+        }, 200);
+    }
+}
+
+function minimizeWindow(windowId) {
+    playClickSound();
+    const window = document.getElementById(windowId);
+    if (window) {
+        // Store original position and size
+        if (!window.dataset.minimized) {
+            window.dataset.originalTop = window.style.top;
+            window.dataset.originalLeft = window.style.left;
+            window.dataset.originalWidth = window.style.width;
+            window.dataset.originalHeight = window.style.height;
+            window.dataset.originalZIndex = window.style.zIndex;
+        }
+        
+        // Animate to taskbar
+        window.style.transition = 'all 0.3s ease-out';
+        window.style.transform = 'scale(0.1)';
+        window.style.opacity = '0.5';
+        window.style.top = 'calc(100vh - 60px)';
+        window.style.left = '20px';
+        window.style.zIndex = '1';
+        
+        // Hide window content
+        const windowBody = window.querySelector('.window-body');
+        const menuBar = window.querySelector('.menu-bar');
+        if (windowBody) windowBody.style.display = 'none';
+        if (menuBar) menuBar.style.display = 'none';
+        
+        window.dataset.minimized = 'true';
+        
+        // Update taskbar app state
+        const taskbarApp = document.querySelector('.taskbar-app');
+        if (taskbarApp && windowId !== 'mainWindow') {
+            taskbarApp.classList.remove('active');
+        }
+    }
+}
+
+function maximizeWindow(windowId) {
+    playClickSound();
+    const window = document.getElementById(windowId);
+    if (!window) return;
+    
+    // Check if window is minimized first - restore it
+    if (window.dataset.minimized === 'true') {
+        restoreWindow(windowId);
+        return;
+    }
+    
+    // Toggle between maximized and normal state
+    if (window.dataset.maximized === 'true') {
+        // Restore to original size
+        window.style.top = window.dataset.originalTop || '20px';
+        window.style.left = window.dataset.originalLeft || '20px';
+        window.style.width = window.dataset.originalWidth || '600px';
+        window.style.height = window.dataset.originalHeight || '500px';
+        window.dataset.maximized = 'false';
+    } else {
+        // Store current position/size before maximizing
+        window.dataset.originalTop = window.style.top;
+        window.dataset.originalLeft = window.style.left;
+        window.dataset.originalWidth = window.style.width;
+        window.dataset.originalHeight = window.style.height;
+        
+        // Maximize window
+        window.style.top = '0px';
+        window.style.left = '0px';
+        window.style.width = '100vw';
+        window.style.height = 'calc(100vh - 28px)'; // Account for taskbar
+        window.dataset.maximized = 'true';
+    }
+    
+    // Bring window to front
+    window.style.zIndex = Math.max(...Array.from(document.querySelectorAll('.window')).map(w => parseInt(w.style.zIndex) || 0)) + 1;
+}
+
+function restoreWindow(windowId) {
+    const window = document.getElementById(windowId);
+    if (!window || window.dataset.minimized !== 'true') return;
+    
+    // Restore transition and properties
+    window.style.transition = 'all 0.3s ease-out';
+    window.style.transform = 'scale(1)';
+    window.style.opacity = '1';
+    window.style.top = window.dataset.originalTop || '20px';
+    window.style.left = window.dataset.originalLeft || '20px';
+    window.style.width = window.dataset.originalWidth || '600px';
+    window.style.height = window.dataset.originalHeight || '500px';
+    window.style.zIndex = window.dataset.originalZIndex || '100';
+    
+    // Show window content
+    const windowBody = window.querySelector('.window-body');
+    const menuBar = window.querySelector('.menu-bar');
+    if (windowBody) windowBody.style.display = 'block';
+    if (menuBar) menuBar.style.display = 'flex';
+    
+    // Clear minimized state
+    delete window.dataset.minimized;
+    
+    // Remove transition after animation
+    setTimeout(() => {
+        window.style.transition = '';
+    }, 300);
+    
+    // Update taskbar app state
+    const taskbarApp = document.querySelector('.taskbar-app');
+    if (taskbarApp && windowId !== 'mainWindow') {
+        taskbarApp.classList.add('active');
+    }
+}
+
+function closeAllWindows() {
+    appState.openWindows.forEach(windowId => {
+        if (windowId !== 'mainWindow') {
+            closeWindow(windowId);
+        }
+    });
+}
+
+// Tab Management
+function showTab(tabId) {
+    playClickSound();
+    
+    // Remove active class from all tabs and content
+    document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+    document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+    
+    // Add active class to selected tab and content
+    document.querySelector(`button[onclick="showTab('${tabId}')"]`).classList.add('active');
+    document.getElementById(tabId).classList.add('active');
+    
+    appState.currentTab = tabId;
+}
+
+// Window Creation Functions
+function createSymptomCheckerWindow() {
+    const window = document.createElement('div');
+    window.className = 'window';
+    window.id = 'symptom-checker';
+    window.style.cssText = 'top: 60px; left: 60px; width: 600px; height: 500px; z-index: 100;';
+    
+    window.innerHTML = `
+        <div class="title-bar">
+            <div class="title-bar-text">Symptom Assessment Tool</div>
+            <div class="title-bar-controls">
+                <button class="minimize-btn" aria-label="Minimize" onclick="minimizeWindow('symptom-checker')"></button>
+                <button class="maximize-btn" aria-label="Maximize" onclick="maximizeWindow('symptom-checker')"></button>
+                <button class="close-btn" aria-label="Close" onclick="closeWindow('symptom-checker')"></button>
+            </div>
+        </div>
+        
+        <div class="window-body" style="padding: 20px;">
+            <div class="pharmaceutical-header" style="margin-bottom: 20px;">
+                <h2 style="color: var(--pharma-orange); margin-bottom: 8px;">AI-Powered Symptom Analysis</h2>
+                <p style="color: var(--pharma-text-light);">Select symptoms you're experiencing for personalized assessment</p>
+            </div>
+            
+            <div class="symptom-categories">
+                <div class="symptom-category">
+                    <h3 style="color: var(--pharma-text); margin-bottom: 12px;">🔥 Inflammatory Symptoms</h3>
+                    <div class="checkbox-group">
+                        <label class="win95-checkbox">
+                            <input type="checkbox" value="joint-pain"> Joint pain or stiffness
+                        </label>
+                        <label class="win95-checkbox">
+                            <input type="checkbox" value="fatigue"> Chronic fatigue
+                        </label>
+                        <label class="win95-checkbox">
+                            <input type="checkbox" value="brain-fog"> Brain fog or cognitive issues
+                        </label>
+                        <label class="win95-checkbox">
+                            <input type="checkbox" value="digestive"> Digestive problems
+                        </label>
+                    </div>
+                </div>
+                
+                <div class="symptom-category">
+                    <h3 style="color: var(--pharma-text); margin-bottom: 12px;">🧠 Neurological Symptoms</h3>
+                    <div class="checkbox-group">
+                        <label class="win95-checkbox">
+                            <input type="checkbox" value="headaches"> Frequent headaches
+                        </label>
+                        <label class="win95-checkbox">
+                            <input type="checkbox" value="memory"> Memory problems
+                        </label>
+                        <label class="win95-checkbox">
+                            <input type="checkbox" value="mood"> Mood swings or depression
+                        </label>
+                        <label class="win95-checkbox">
+                            <input type="checkbox" value="sleep"> Sleep disturbances
+                        </label>
+                    </div>
+                </div>
+                
+                <div class="symptom-category">
+                    <h3 style="color: var(--pharma-text); margin-bottom: 12px;">⚡ Metabolic Symptoms</h3>
+                    <div class="checkbox-group">
+                        <label class="win95-checkbox">
+                            <input type="checkbox" value="weight"> Unexplained weight changes
+                        </label>
+                        <label class="win95-checkbox">
+                            <input type="checkbox" value="energy"> Low energy levels
+                        </label>
+                        <label class="win95-checkbox">
+                            <input type="checkbox" value="cravings"> Sugar/carb cravings
+                        </label>
+                        <label class="win95-checkbox">
+                            <input type="checkbox" value="temperature"> Temperature sensitivity
+                        </label>
+                    </div>
+                </div>
+            </div>
+            
+            <div style="margin-top: 20px; text-align: center;">
+                <button class="win95-btn" onclick="analyzeSymptoms()" style="padding: 8px 20px; font-size: 12px;">
+                    Analyze Symptoms
+                </button>
+                <button class="win95-btn" onclick="clearSymptoms()" style="padding: 8px 20px; font-size: 12px; margin-left: 10px;">
+                    Clear All
+                </button>
+            </div>
+            
+            <div id="symptomResults" style="margin-top: 20px; display: none;"></div>
+        </div>
+    `;
+    
+    return window;
+}
+
+function createTherapyRecommendationsWindow() {
+    const window = document.createElement('div');
+    window.className = 'window';
+    window.id = 'therapy-recommendations';
+    window.style.cssText = 'top: 80px; left: 80px; width: 700px; height: 600px; z-index: 101;';
+    
+    window.innerHTML = `
+        <div class="title-bar">
+            <div class="title-bar-text">Evidence-Based Therapy Recommendations</div>
+            <div class="title-bar-controls">
+                <button class="minimize-btn" aria-label="Minimize" onclick="minimizeWindow('therapy-recommendations')"></button>
+                <button class="maximize-btn" aria-label="Maximize" onclick="maximizeWindow('therapy-recommendations')"></button>
+                <button class="close-btn" aria-label="Close" onclick="closeWindow('therapy-recommendations')"></button>
+            </div>
+        </div>
+        
+        <div class="window-body" style="padding: 20px;">
+            <div class="therapy-categories">
+                <div class="therapy-category">
+                    <div class="therapy-header" style="background: linear-gradient(135deg, var(--pharma-light-orange), #fef2ed); padding: 15px; border-radius: 8px; margin-bottom: 15px;">
+                        <h3 style="color: var(--pharma-orange); margin-bottom: 8px;">💊 Primary Therapeutics</h3>
+                        <p style="color: var(--pharma-text-light); font-size: 14px;">Clinically validated compounds for inflammation and longevity</p>
+                    </div>
+                    
+                    <div class="therapy-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                        <div class="therapy-card" style="background: white; border: 2px outset var(--win95-gray); padding: 15px;">
+                            <div class="therapy-pill-icon" style="width: 40px; height: 40px; background: linear-gradient(135deg, #ff6b6b, #ee5a5a); border-radius: 50%; margin-bottom: 10px;"></div>
+                            <h4 style="color: var(--pharma-text); margin-bottom: 8px;">Rapamycin</h4>
+                            <div class="chemical-info" style="font-size: 12px; color: var(--pharma-text-light); margin-bottom: 10px;">
+                                <div>C₂₅H₅₁NO₁₃ | 914.187 g/mol</div>
+                            </div>
+                            <div class="benefits" style="font-size: 13px;">
+                                <div>✓ mTOR pathway inhibition</div>
+                                <div>✓ Autophagy enhancement</div>
+                                <div>✓ Inflammation reduction</div>
+                                <div>✓ Longevity promotion</div>
+                            </div>
+                            <button class="win95-btn" onclick="showTherapyDetails('rapamycin')" style="margin-top: 10px;">Details</button>
+                        </div>
+                        
+                        <div class="therapy-card" style="background: white; border: 2px outset var(--win95-gray); padding: 15px;">
+                            <div class="therapy-pill-icon" style="width: 40px; height: 40px; background: linear-gradient(135deg, #E17B47, #D4693A); border-radius: 50%; margin-bottom: 10px;"></div>
+                            <h4 style="color: var(--pharma-text); margin-bottom: 8px;">TA-65</h4>
+                            <div class="chemical-info" style="font-size: 12px; color: var(--pharma-text-light); margin-bottom: 10px;">
+                                <div>C₃₀H₅₀O₅ | 490.72 g/mol</div>
+                            </div>
+                            <div class="benefits" style="font-size: 13px;">
+                                <div>✓ Telomerase activation</div>
+                                <div>✓ Cellular regeneration</div>
+                                <div>✓ DNA protection</div>
+                                <div>✓ Anti-aging effects</div>
+                            </div>
+                            <button class="win95-btn" onclick="showTherapyDetails('ta65')" style="margin-top: 10px;">Details</button>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="therapy-category" style="margin-top: 25px;">
+                    <div class="therapy-header" style="background: linear-gradient(135deg, #f0fff0, #e8f5e8); padding: 15px; border-radius: 8px; margin-bottom: 15px;">
+                        <h3 style="color: #2d8f47; margin-bottom: 8px;">🌿 Natural Compounds</h3>
+                        <p style="color: var(--pharma-text-light); font-size: 14px;">Plant-based therapeutics with clinical backing</p>
+                    </div>
+                    
+                    <div class="natural-compounds" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px;">
+                        <div class="compound-card" style="background: white; border: 1px solid #ddd; padding: 12px; border-radius: 6px;">
+                            <h5 style="color: var(--pharma-text); margin-bottom: 6px;">Curcumin</h5>
+                            <p style="font-size: 12px; color: var(--pharma-text-light);">Anti-inflammatory, antioxidant</p>
+                            <p style="font-size: 11px; color: #2d8f47;">Dose: 500-1000mg daily</p>
+                        </div>
+                        <div class="compound-card" style="background: white; border: 1px solid #ddd; padding: 12px; border-radius: 6px;">
+                            <h5 style="color: var(--pharma-text); margin-bottom: 6px;">Resveratrol</h5>
+                            <p style="font-size: 12px; color: var(--pharma-text-light);">Sirtuin activation, longevity</p>
+                            <p style="font-size: 11px; color: #2d8f47;">Dose: 250-500mg daily</p>
+                        </div>
+                        <div class="compound-card" style="background: white; border: 1px solid #ddd; padding: 12px; border-radius: 6px;">
+                            <h5 style="color: var(--pharma-text); margin-bottom: 6px;">Quercetin</h5>
+                            <p style="font-size: 12px; color: var(--pharma-text-light);">Senolytic, immune support</p>
+                            <p style="font-size: 11px; color: #2d8f47;">Dose: 500mg daily</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div id="therapyDetails" style="margin-top: 20px; display: none;"></div>
+        </div>
+    `;
+    
+    return window;
+}
+
+function createProtocolGeneratorWindow() {
+    const window = document.createElement('div');
+    window.className = 'window';
+    window.id = 'protocol-generator';
+    window.style.cssText = 'top: 100px; left: 100px; width: 650px; height: 550px; z-index: 102;';
+    
+    window.innerHTML = `
+        <div class="title-bar">
+            <div class="title-bar-text">Daily Protocol Generator</div>
+            <div class="title-bar-controls">
+                <button class="minimize-btn" aria-label="Minimize" onclick="minimizeWindow('protocol-generator')"></button>
+                <button class="maximize-btn" aria-label="Maximize" onclick="maximizeWindow('protocol-generator')"></button>
+                <button class="close-btn" aria-label="Close" onclick="closeWindow('protocol-generator')"></button>
+            </div>
+        </div>
+        
+        <div class="window-body" style="padding: 20px;">
+            <div class="protocol-form">
+                <h3 style="color: var(--pharma-orange); margin-bottom: 15px;">Personalized Protocol Configuration</h3>
+                
+                <div class="form-section" style="margin-bottom: 20px;">
+                    <h4 style="color: var(--pharma-text); margin-bottom: 10px;">Primary Goals</h4>
+                    <div class="goal-checkboxes" style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
+                        <label class="win95-checkbox"><input type="checkbox" value="inflammation"> Reduce Inflammation</label>
+                        <label class="win95-checkbox"><input type="checkbox" value="longevity"> Promote Longevity</label>
+                        <label class="win95-checkbox"><input type="checkbox" value="cognitive"> Enhance Cognition</label>
+                        <label class="win95-checkbox"><input type="checkbox" value="energy"> Increase Energy</label>
+                        <label class="win95-checkbox"><input type="checkbox" value="recovery"> Improve Recovery</label>
+                        <label class="win95-checkbox"><input type="checkbox" value="sleep"> Optimize Sleep</label>
+                    </div>
+                </div>
+                
+                <div class="form-section" style="margin-bottom: 20px;">
+                    <h4 style="color: var(--pharma-text); margin-bottom: 10px;">Lifestyle Factors</h4>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                        <div>
+                            <label style="display: block; margin-bottom: 5px; font-size: 13px;">Age Range:</label>
+                            <select id="ageRange" style="width: 100%; padding: 4px; border: 2px inset var(--win95-gray);">
+                                <option value="0-7">0-7 years</option>
+                                <option value="8-12">8-12 years</option>
+                                <option value="13-17">13-17 years</option>
+                                <option value="18-25">18-25 years</option>
+                                <option value="26-35">26-35 years</option>
+                                <option value="36-45">36-45 years</option>
+                                <option value="46-55">46-55 years</option>
+                                <option value="56-65">56-65 years</option>
+                                <option value="65+">65+ years</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label style="display: block; margin-bottom: 5px; font-size: 13px;">Activity Level:</label>
+                            <select id="activityLevel" style="width: 100%; padding: 4px; border: 2px inset var(--win95-gray);">
+                                <option value="sedentary">Sedentary</option>
+                                <option value="light">Light Activity</option>
+                                <option value="moderate">Moderate Activity</option>
+                                <option value="high">High Activity</option>
+                                <option value="athlete">Athlete</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="form-section" style="margin-bottom: 20px;">
+                    <h4 style="color: var(--pharma-text); margin-bottom: 10px;">Current Health Status</h4>
+                    <div>
+                        <label class="win95-checkbox"><input type="checkbox" value="chronic-condition"> Chronic Health Condition</label>
+                        <label class="win95-checkbox"><input type="checkbox" value="medications"> Taking Medications</label>
+                        <label class="win95-checkbox"><input type="checkbox" value="supplements"> Current Supplement Use</label>
+                    </div>
+                </div>
+                
+                <div style="text-align: center; margin-top: 25px;">
+                    <button class="win95-btn" onclick="generateProtocol()" style="padding: 10px 25px; font-size: 13px;">
+                        Generate My Protocol
+                    </button>
+                </div>
+            </div>
+            
+            <div id="protocolResults" style="margin-top: 25px; display: none;"></div>
+        </div>
+    `;
+    
+    return window;
+}
+
+function createTerminalChatWindow() {
+    const window = document.createElement('div');
+    window.className = 'window';
+    window.id = 'terminal-chat';
+    window.style.cssText = 'top: 120px; left: 120px; width: 700px; height: 600px; z-index: 103;';
+    
+    window.innerHTML = `
+        <div class="title-bar">
+            <div class="title-bar-text">Inflamm AI - Interactive Therapy Consultant</div>
+            <div class="title-bar-controls">
+                <button class="minimize-btn" aria-label="Minimize" onclick="minimizeWindow('terminal-chat')"></button>
+                <button class="maximize-btn" aria-label="Maximize" onclick="maximizeWindow('terminal-chat')"></button>
+                <button class="close-btn" aria-label="Close" onclick="closeWindow('terminal-chat')"></button>
+            </div>
+        </div>
+        
+        <div class="window-body" style="padding: 20px; background: var(--pharma-white);">
+            <!-- AI Consultation Header -->
+            <div class="ai-consultation-header" style="background: linear-gradient(135deg, var(--pharma-light-orange), #fef2ed); border: 2px inset var(--win95-gray); padding: 15px; margin-bottom: 20px; border-radius: 8px;">
+                <div style="display: flex; align-items: center; gap: 15px;">
+                    <div style="width: 50px; height: 50px; background: var(--pharma-orange); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-weight: bold; font-size: 18px;">AI</div>
+                    <div>
+                        <h3 style="color: var(--pharma-orange); margin-bottom: 5px;">Interactive AI Therapy Consultant</h3>
+                        <p style="color: var(--pharma-text-light); font-size: 14px; margin: 0;">Ask questions about inflammation, longevity, and therapeutic protocols</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Quick Topic Buttons -->
+            <div class="topic-buttons" style="margin-bottom: 20px;">
+                <h4 style="color: var(--pharma-text); margin-bottom: 12px;">Quick Topics:</h4>
+                <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px;">
+                    <button class="win95-btn topic-btn" onclick="askAIQuestion('inflammation')" style="padding: 8px 12px; font-size: 11px;">
+                        🔥 Inflammation
+                    </button>
+                    <button class="win95-btn topic-btn" onclick="askAIQuestion('longevity')" style="padding: 8px 12px; font-size: 11px;">
+                        ⏳ Longevity
+                    </button>
+                    <button class="win95-btn topic-btn" onclick="askAIQuestion('protocols')" style="padding: 8px 12px; font-size: 11px;">
+                        📋 Protocols
+                    </button>
+                    <button class="win95-btn topic-btn" onclick="askAIQuestion('rapamycin')" style="padding: 8px 12px; font-size: 11px;">
+                        💊 Rapamycin
+                    </button>
+                    <button class="win95-btn topic-btn" onclick="askAIQuestion('ta65')" style="padding: 8px 12px; font-size: 11px;">
+                        🧬 TA-65
+                    </button>
+                    <button class="win95-btn topic-btn" onclick="askAIQuestion('biomarkers')" style="padding: 8px 12px; font-size: 11px;">
+                        📊 Biomarkers
+                    </button>
+                </div>
+            </div>
+
+            <!-- Chat Interface -->
+            <div class="ai-chat-interface" style="border: 2px inset var(--win95-gray); height: 300px; display: flex; flex-direction: column;">
+                <!-- Chat Messages Area -->
+                <div id="aiChatMessages" style="
+                    flex: 1;
+                    padding: 15px;
+                    overflow-y: auto;
+                    background: white;
+                    font-family: var(--font-clinical);
+                    font-size: 13px;
+                    line-height: 1.5;
+                ">
+                    <div class="ai-message">
+                        <div style="display: flex; align-items: flex-start; gap: 10px; margin-bottom: 15px;">
+                            <div style="width: 30px; height: 30px; background: var(--pharma-orange); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-weight: bold; font-size: 12px; flex-shrink: 0;">AI</div>
+                            <div style="background: var(--pharma-light-orange); padding: 10px 15px; border-radius: 15px; border-radius: 15px 15px 15px 5px;">
+                                <strong>Welcome to Inflamm AI!</strong><br>
+                                I'm your interactive therapy consultant specializing in:<br>
+                                • Chronic inflammation management<br>
+                                • Longevity and anti-aging protocols<br>
+                                • Evidence-based therapeutic interventions<br><br>
+                                Click a topic above or ask me anything!
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Input Area -->
+                <div style="border-top: 1px solid var(--win95-dark-gray); padding: 10px; background: var(--win95-gray);">
+                    <div style="display: flex; gap: 10px;">
+                        <input 
+                            type="text" 
+                            id="aiChatInput" 
+                            placeholder="Ask about inflammation, longevity, or therapeutic protocols..." 
+                            style="
+                                flex: 1;
+                                padding: 6px 10px;
+                                border: 2px inset var(--win95-gray);
+                                font-family: var(--font-clinical);
+                                font-size: 12px;
+                                background: white;
+                            "
+                            onkeypress="handleAIChatInput(event)"
+                        >
+                        <button class="win95-btn" onclick="sendAIMessage()" style="padding: 6px 15px; font-size: 11px;">
+                            Send
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- AI Capabilities Info -->
+            <div style="margin-top: 15px; font-size: 11px; color: var(--pharma-text-light);">
+                <strong>AI Capabilities:</strong> Evidence-based therapeutic guidance • Latest research insights • Protocol recommendations • Biomarker interpretation • Safety considerations
+            </div>
+        </div>
+    `;
+    
+    // Focus on input after window creation
+    setTimeout(() => {
+        const input = document.getElementById('aiChatInput');
+        if (input) input.focus();
+    }, 100);
+    
+    return window;
+}
+
+// Interactive Functions
+function analyzeSymptoms() {
+    playClickSound();
+    const checkedSymptoms = Array.from(document.querySelectorAll('#symptom-checker input[type="checkbox"]:checked'))
+        .map(cb => cb.value);
+    
+    if (checkedSymptoms.length === 0) {
+        alert('Please select at least one symptom to analyze.');
+        return;
+    }
+    
+    appState.user.symptoms = checkedSymptoms;
+    
+    const results = generateSymptomAnalysis(checkedSymptoms);
+    const resultsDiv = document.getElementById('symptomResults');
+    resultsDiv.innerHTML = results;
+    resultsDiv.style.display = 'block';
+}
+
+function clearSymptoms() {
+    playClickSound();
+    document.querySelectorAll('#symptom-checker input[type="checkbox"]').forEach(cb => cb.checked = false);
+    document.getElementById('symptomResults').style.display = 'none';
+    appState.user.symptoms = [];
+}
+
+function generateSymptomAnalysis(symptoms) {
+    const inflammatoryScore = symptoms.filter(s => 
+        ['joint-pain', 'fatigue', 'brain-fog', 'digestive'].includes(s)
+    ).length;
+    
+    const neurologicalScore = symptoms.filter(s => 
+        ['headaches', 'memory', 'mood', 'sleep'].includes(s)
+    ).length;
+    
+    const metabolicScore = symptoms.filter(s => 
+        ['weight', 'energy', 'cravings', 'temperature'].includes(s)
+    ).length;
+    
+    // Analyze inflammation type
+    const inflammationAnalysis = analyzeInflammationType(symptoms);
+    
+    let analysis = `
+        <div style="background: var(--pharma-light-orange); border: 2px inset var(--win95-gray); padding: 15px; border-radius: 8px;">
+            <h3 style="color: var(--pharma-orange); margin-bottom: 12px;">🔬 AI Analysis Results</h3>
+            
+            <!-- Inflammation Type Analysis -->
+            <div style="background: ${inflammationAnalysis.type === 'Chronic' ? '#fff2f0' : '#f0f8ff'}; border: 2px solid ${inflammationAnalysis.type === 'Chronic' ? '#ff6b6b' : '#4a90e2'}; padding: 12px; border-radius: 6px; margin-bottom: 15px;">
+                <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 8px;">
+                    <div style="font-size: 20px;">${inflammationAnalysis.icon}</div>
+                    <div>
+                        <h4 style="color: ${inflammationAnalysis.type === 'Chronic' ? '#d63031' : '#0984e3'}; margin: 0; font-size: 16px;">
+                            ${inflammationAnalysis.type} Inflammation Detected
+                        </h4>
+                        <div style="font-size: 12px; color: var(--pharma-text-light); margin-top: 2px;">
+                            Confidence: ${inflammationAnalysis.confidence}%
+                        </div>
+                    </div>
+                </div>
+                <div style="font-size: 13px; color: var(--pharma-text); line-height: 1.4;">
+                    ${inflammationAnalysis.description}
+                </div>
+            </div>
+            
+            <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 15px;">
+                <div style="text-align: center; padding: 10px; background: white; border-radius: 6px;">
+                    <div style="font-size: 24px; color: #ff6b6b; font-weight: bold;">${inflammatoryScore}</div>
+                    <div style="font-size: 12px; color: var(--pharma-text);">Inflammatory</div>
+                </div>
+                <div style="text-align: center; padding: 10px; background: white; border-radius: 6px;">
+                    <div style="font-size: 24px; color: #F29F76; font-weight: bold;">${neurologicalScore}</div>
+                    <div style="font-size: 12px; color: var(--pharma-text);">Neurological</div>
+                </div>
+                <div style="text-align: center; padding: 10px; background: white; border-radius: 6px;">
+                    <div style="font-size: 24px; color: #E17B47; font-weight: bold;">${metabolicScore}</div>
+                    <div style="font-size: 12px; color: var(--pharma-text);">Metabolic</div>
+                </div>
+            </div>
+            
+            <div style="background: white; padding: 12px; border-radius: 6px; margin-bottom: 12px;">
+                <h4 style="color: var(--pharma-text); margin-bottom: 8px;">Recommended Actions:</h4>
+                ${getRecommendations(inflammatoryScore, neurologicalScore, metabolicScore, inflammationAnalysis.type)}
+            </div>
+            
+            <div style="text-align: center;">
+                <button class="win95-btn" onclick="openWindow('therapy-recommendations')" style="margin-right: 10px;">
+                    View Therapies
+                </button>
+                <button class="win95-btn" onclick="openWindow('protocol-generator')">
+                    Create Protocol
+                </button>
+            </div>
+        </div>
+    `;
+    
+    return analysis;
+}
+
+function analyzeInflammationType(symptoms) {
+    // Define chronic inflammation indicators
+    const chronicIndicators = [
+        'joint-pain',    // Persistent joint pain
+        'fatigue',       // Chronic fatigue
+        'brain-fog',     // Cognitive issues over time
+        'digestive',     // Chronic digestive issues
+        'mood',          // Depression/anxiety (chronic)
+        'sleep',         // Sleep disorders (chronic)
+        'memory',        // Memory problems (chronic)
+        'weight'         // Weight gain/loss over time
+    ];
+    
+    // Define acute inflammation indicators
+    const acuteIndicators = [
+        'headaches',     // Sudden headaches
+        'temperature',   // Temperature sensitivity (fever-like)
+        'energy'         // Sudden energy changes
+    ];
+    
+    const chronicScore = symptoms.filter(s => chronicIndicators.includes(s)).length;
+    const acuteScore = symptoms.filter(s => acuteIndicators.includes(s)).length;
+    const totalSymptoms = symptoms.length;
+    
+    let type, confidence, description, icon;
+    
+    if (chronicScore >= 3 || (chronicScore >= 2 && totalSymptoms >= 4)) {
+        type = 'Chronic';
+        confidence = Math.min(95, 60 + (chronicScore * 10));
+        icon = '🔥';
+        description = `Your symptom pattern indicates chronic inflammation - a persistent, low-grade inflammatory response that develops over time. This type typically involves multiple body systems and requires long-term management strategies focusing on lifestyle modifications, targeted supplementation, and addressing root causes.`;
+    } else if (acuteScore >= 2 && chronicScore <= 1) {
+        type = 'Acute';
+        confidence = Math.min(90, 50 + (acuteScore * 15));
+        icon = '⚡';
+        description = `Your symptoms suggest acute inflammation - a short-term, intense inflammatory response typically triggered by specific factors. This type often resolves with targeted interventions addressing immediate triggers and may benefit from rapid-acting anti-inflammatory approaches.`;
+    } else if (chronicScore >= 1) {
+        type = 'Chronic';
+        confidence = Math.min(75, 40 + (chronicScore * 12));
+        icon = '🔥';
+        description = `Based on your symptoms, you likely have chronic inflammation with some acute components. This mixed pattern suggests an underlying chronic inflammatory state that may have periodic flare-ups. A comprehensive approach targeting both immediate relief and long-term management is recommended.`;
+    } else {
+        type = 'Low-Grade';
+        confidence = 60;
+        icon = '📊';
+        description = `Your symptoms suggest minimal inflammatory activity or early-stage inflammation. While the pattern isn't strongly indicative of either acute or chronic inflammation, monitoring and preventive measures may be beneficial to prevent progression.`;
+    }
+    
+    return { type, confidence, description, icon };
+}
+
+function getRecommendations(inflammatory, neurological, metabolic, inflammationType) {
+    let recommendations = '<ul style="margin: 0; padding-left: 20px; font-size: 13px;">';
+    
+    // Add inflammation-type specific recommendations
+    if (inflammationType === 'Chronic') {
+        recommendations += '<li><strong>Chronic Inflammation Protocol:</strong> Long-term mTOR modulation with rapamycin</li>';
+        recommendations += '<li>Daily curcumin (500-1000mg) with piperine for sustained anti-inflammatory effects</li>';
+        recommendations += '<li>Omega-3 fatty acids (2-3g EPA/DHA daily) for membrane stabilization</li>';
+        recommendations += '<li>Consider intermittent fasting (16:8 or 18:6) to reduce chronic inflammation</li>';
+    } else if (inflammationType === 'Acute') {
+        recommendations += '<li><strong>Acute Inflammation Protocol:</strong> High-dose curcumin (1000-1500mg) for rapid relief</li>';
+        recommendations += '<li>Identify and eliminate inflammatory triggers (diet, stress, toxins)</li>';
+        recommendations += '<li>Short-term targeted interventions with natural anti-inflammatories</li>';
+        recommendations += '<li>Monitor symptoms closely for resolution within 2-4 weeks</li>';
+    }
+    
+    if (inflammatory >= 2) {
+        recommendations += '<li>Comprehensive inflammatory biomarker panel (CRP, IL-6, TNF-α)</li>';
+        if (inflammationType !== 'Acute') {
+            recommendations += '<li>Evaluate mTOR pathway modulation with rapamycin</li>';
+        }
+    }
+    
+    if (neurological >= 2) {
+        recommendations += '<li>Assess neuroinflammation markers</li>';
+        recommendations += '<li>Consider cognitive enhancement protocols</li>';
+    }
+    
+    if (metabolic >= 2) {
+        recommendations += '<li>Metabolic panel and insulin sensitivity testing</li>';
+        recommendations += '<li>Consider intermittent fasting and metabolic optimization</li>';
+    }
+    
+    if (inflammatory + neurological + metabolic >= 5) {
+        recommendations += '<li><strong>Comprehensive evaluation recommended - Multi-system involvement detected</strong></li>';
+    }
+    
+    recommendations += '</ul>';
+    return recommendations;
+}
+
+function showTherapyDetails(therapyType) {
+    playClickSound();
+    const detailsDiv = document.getElementById('therapyDetails');
+    
+    const therapyData = {
+        rapamycin: {
+            name: 'Rapamycin (Sirolimus)',
+            mechanism: 'mTOR pathway inhibition leading to enhanced autophagy and reduced cellular senescence',
+            dosing: 'Typical range: 1-6mg weekly, personalized based on biomarkers',
+            benefits: 'Longevity extension, inflammation reduction, cancer prevention, improved immune function',
+            considerations: 'Requires monitoring of lipid levels, blood glucose, and immune function',
+            research: 'Over 3000 published studies demonstrating anti-aging and health-promoting effects'
+        },
+        ta65: {
+            name: 'TA-65 (Telomerase Activator)',
+            mechanism: 'Activates telomerase enzyme to maintain telomere length and cellular vitality',
+            dosing: 'Standard: 250-1000 units daily, based on telomere length testing',
+            benefits: 'Cellular regeneration, improved immune function, enhanced vitality, potential lifespan extension',
+            considerations: 'Generally well tolerated, periodic telomere length monitoring recommended',
+            research: 'Clinical studies show measurable improvements in immune markers and cellular health'
+        }
+    };
+    
+    const therapy = therapyData[therapyType];
+    if (!therapy) return;
+    
+    detailsDiv.innerHTML = `
+        <div style="background: white; border: 2px inset var(--win95-gray); padding: 20px; border-radius: 8px;">
+            <h3 style="color: var(--pharma-orange); margin-bottom: 15px;">${therapy.name}</h3>
+            
+            <div style="margin-bottom: 15px;">
+                <h4 style="color: var(--pharma-text); margin-bottom: 8px;">Mechanism of Action:</h4>
+                <p style="font-size: 13px; color: var(--pharma-text-light);">${therapy.mechanism}</p>
+            </div>
+            
+            <div style="margin-bottom: 15px;">
+                <h4 style="color: var(--pharma-text); margin-bottom: 8px;">Dosing Protocol:</h4>
+                <p style="font-size: 13px; color: var(--pharma-text-light);">${therapy.dosing}</p>
+            </div>
+            
+            <div style="margin-bottom: 15px;">
+                <h4 style="color: var(--pharma-text); margin-bottom: 8px;">Clinical Benefits:</h4>
+                <p style="font-size: 13px; color: var(--pharma-text-light);">${therapy.benefits}</p>
+            </div>
+            
+            <div style="margin-bottom: 15px;">
+                <h4 style="color: var(--pharma-text); margin-bottom: 8px;">Clinical Considerations:</h4>
+                <p style="font-size: 13px; color: var(--pharma-text-light);">${therapy.considerations}</p>
+            </div>
+            
+            <div style="margin-bottom: 15px;">
+                <h4 style="color: var(--pharma-text); margin-bottom: 8px;">Research Evidence:</h4>
+                <p style="font-size: 13px; color: var(--pharma-text-light);">${therapy.research}</p>
+            </div>
+            
+            <div style="text-align: center;">
+                <button class="win95-btn" onclick="document.getElementById('therapyDetails').style.display='none'">
+                    Close Details
+                </button>
+            </div>
+        </div>
+    `;
+    
+    detailsDiv.style.display = 'block';
+}
+
+function generateProtocol() {
+    playClickSound();
+    
+    const goals = Array.from(document.querySelectorAll('#protocol-generator .goal-checkboxes input:checked'))
+        .map(cb => cb.value);
+    
+    if (goals.length === 0) {
+        alert('Please select at least one primary goal.');
+        return;
+    }
+    
+    const ageRange = document.getElementById('ageRange').value;
+    const activityLevel = document.getElementById('activityLevel').value;
+    
+    const protocol = createPersonalizedProtocol(goals, ageRange, activityLevel);
+    const resultsDiv = document.getElementById('protocolResults');
+    resultsDiv.innerHTML = protocol;
+    resultsDiv.style.display = 'block';
+}
+
+function createPersonalizedProtocol(goals, ageRange, activityLevel) {
+    const protocolItems = [];
+    
+    // Base supplements based on goals
+    if (goals.includes('inflammation')) {
+        protocolItems.push({
+            time: '8:00 AM',
+            item: 'Curcumin 500mg + Black Pepper Extract',
+            type: 'supplement',
+            notes: 'Take with fat for better absorption'
+        });
+    }
+    
+    if (goals.includes('longevity')) {
+        protocolItems.push({
+            time: '8:00 AM', 
+            item: 'Resveratrol 250mg',
+            type: 'supplement',
+            notes: 'Sirtuin activation for longevity'
+        });
+    }
+    
+    if (goals.includes('cognitive')) {
+        protocolItems.push({
+            time: '9:00 AM',
+            item: 'Lion\'s Mane Mushroom 500mg',
+            type: 'supplement',
+            notes: 'Supports neuroplasticity and focus'
+        });
+    }
+    
+    // Add lifestyle components
+    protocolItems.push({
+        time: '6:00 AM',
+        item: '16:8 Intermittent Fasting (Start)',
+        type: 'lifestyle',
+        notes: 'Fast until 2:00 PM for metabolic benefits'
+    });
+    
+    if (goals.includes('energy') || activityLevel !== 'sedentary') {
+        protocolItems.push({
+            time: '7:00 AM',
+            item: 'Morning Exercise (20-30 min)',
+            type: 'lifestyle',
+            notes: 'Resistance training or cardio based on goals'
+        });
+    }
+    
+    protocolItems.push({
+        time: '10:00 PM',
+        item: 'Sleep Optimization Routine',
+        type: 'lifestyle',
+        notes: 'Blue light blocking, cool temperature, 7-9 hours'
+    });
+    
+    // Sort by time
+    protocolItems.sort((a, b) => a.time.localeCompare(b.time));
+    
+    let protocolHTML = `
+        <div style="background: var(--pharma-light-orange); border: 2px inset var(--win95-gray); padding: 20px; border-radius: 8px;">
+            <h3 style="color: var(--pharma-orange); margin-bottom: 15px;">📋 Your Personalized Daily Protocol</h3>
+            
+            <div style="background: white; padding: 15px; border-radius: 6px; margin-bottom: 15px;">
+                <h4 style="color: var(--pharma-text); margin-bottom: 12px;">Daily Schedule:</h4>
+                <div style="font-size: 13px;">
+    `;
+    
+    protocolItems.forEach(item => {
+        const iconMap = {
+            supplement: '💊',
+            lifestyle: '🌟',
+            exercise: '💪',
+            nutrition: '🥗'
+        };
+        
+        protocolHTML += `
+            <div style="display: flex; align-items: center; padding: 8px 0; border-bottom: 1px solid #f0f0f0;">
+                <div style="width: 80px; font-weight: bold; color: var(--pharma-orange);">${item.time}</div>
+                <div style="flex: 1; margin-left: 15px;">
+                    <div style="font-weight: 500; color: var(--pharma-text);">${iconMap[item.type]} ${item.item}</div>
+                    <div style="font-size: 11px; color: var(--pharma-text-light); margin-top: 2px;">${item.notes}</div>
+                </div>
+            </div>
+        `;
+    });
+    
+    protocolHTML += `
+                </div>
+            </div>
+            
+            <div style="background: #fff3cd; border: 1px solid #ffeaa7; padding: 12px; border-radius: 6px; margin-bottom: 15px;">
+                <h5 style="color: #856404; margin-bottom: 6px;">⚠️ Important Notes:</h5>
+                <ul style="font-size: 12px; color: #856404; margin: 0; padding-left: 20px;">
+                    <li>Consult healthcare provider before starting new supplements</li>
+                    <li>Monitor biomarkers every 3-6 months</li>
+                    <li>Adjust dosing based on individual response</li>
+                    <li>This protocol is for educational purposes only</li>
+                </ul>
+            </div>
+            
+            <div style="text-align: center;">
+                <button class="win95-btn" onclick="exportProtocol()" style="margin-right: 10px;">
+                    Export Protocol
+                </button>
+                <button class="win95-btn" onclick="openWindow('terminal-chat')">
+                    Discuss with AI
+                </button>
+            </div>
+        </div>
+    `;
+    
+    return protocolHTML;
+}
+
+function exportProtocol() {
+    playClickSound();
+    alert('Protocol export feature would save your personalized protocol as a PDF or text file.');
+}
+
+// AI Therapy Knowledge Base
+const aiTherapyKnowledge = {
+    inflammation: {
+        title: "🔥 Chronic Inflammation Management",
+        content: `<strong>Understanding Chronic Inflammation:</strong><br>
+        Chronic inflammation is a persistent, low-grade inflammatory response that contributes to aging and disease.<br><br>
+        
+        <strong>Key Biomarkers to Monitor:</strong><br>
+        • CRP (C-Reactive Protein): Target &lt;1.0 mg/L<br>
+        • IL-6 (Interleukin-6): Target &lt;1.8 pg/mL<br>
+        • TNF-α: Target &lt;8.1 pg/mL<br>
+        • ESR: Target &lt;20 mm/hr<br><br>
+        
+        <strong>Evidence-Based Interventions:</strong><br>
+        • Curcumin: 500-1000mg daily with piperine<br>
+        • Omega-3 fatty acids: 2-3g EPA/DHA daily<br>
+        • Intermittent fasting: 16:8 or 18:6 protocols<br>
+        • Regular exercise: 150min moderate intensity weekly<br><br>
+        
+        Would you like specific protocols for your inflammation management?`
+    },
+    
+    longevity: {
+        title: "⏳ Longevity & Anti-Aging Protocols",
+        content: `<strong>Evidence-Based Longevity Interventions:</strong><br><br>
+        
+        <strong>Primary Pathways:</strong><br>
+        • mTOR inhibition (Rapamycin): 1-6mg weekly<br>
+        • Telomerase activation (TA-65): 250-1000 units daily<br>
+        • Autophagy enhancement: Fasting, spermidine<br>
+        • Senolytic therapy: Quercetin + Dasatinib cycles<br><br>
+        
+        <strong>Lifestyle Factors:</strong><br>
+        • Caloric restriction: 10-25% reduction<br>
+        • Time-restricted eating: 12-16 hour fasts<br>
+        • Heat/cold exposure: Sauna, cold plunging<br>
+        • Sleep optimization: 7-9 hours, consistent schedule<br><br>
+        
+        <strong>Biomarkers to Track:</strong><br>
+        • Telomere length • IGF-1 levels • NAD+ status<br>
+        • Inflammatory markers • Metabolic flexibility<br><br>
+        
+        What specific longevity protocol would you like to explore?`
+    },
+    
+    protocols: {
+        title: "📋 Therapeutic Protocol Design",
+        content: `<strong>Protocol Development Framework:</strong><br><br>
+        
+        <strong>Assessment Phase:</strong><br>
+        • Comprehensive biomarker testing<br>
+        • Genetic analysis (APOE, MTHFR, etc.)<br>
+        • Lifestyle and health history<br>
+        • Current medication interactions<br><br>
+        
+        <strong>Protocol Components:</strong><br>
+        • Primary therapeutics (Rapamycin, TA-65)<br>
+        • Supporting supplements (Curcumin, Resveratrol)<br>
+        • Lifestyle interventions (Diet, Exercise, Sleep)<br>
+        • Monitoring schedule (Labs, assessments)<br><br>
+        
+        <strong>Sample Morning Protocol:</strong><br>
+        6:00 AM - Fasting state assessment<br>
+        8:00 AM - Curcumin 500mg + Black pepper<br>
+        9:00 AM - Exercise (resistance/cardio)<br>
+        12:00 PM - Break fast with anti-inflammatory meal<br><br>
+        
+        Would you like a personalized protocol recommendation?`
+    },
+    
+    rapamycin: {
+        title: "💊 Rapamycin Therapy",
+        content: `<strong>Rapamycin (Sirolimus) - mTOR Inhibitor:</strong><br><br>
+        
+        <strong>Mechanism of Action:</strong><br>
+        • Inhibits mTORC1 pathway<br>
+        • Enhances autophagy and cellular cleanup<br>
+        • Reduces cellular senescence<br>
+        • Anti-inflammatory and immunomodulatory effects<br><br>
+        
+        <strong>Dosing Protocols:</strong><br>
+        • Longevity: 1-6mg weekly (pulsed dosing)<br>
+        • Inflammation: 0.5-2mg 2-3x weekly<br>
+        • Timing: Take on empty stomach<br>
+        • Monitoring: Every 4-8 weeks initially<br><br>
+        
+        <strong>Key Monitoring Parameters:</strong><br>
+        • Lipid panel (may increase triglycerides)<br>
+        • Blood glucose (may cause insulin resistance)<br>
+        • CBC with differential<br>
+        • Liver function tests<br><br>
+        
+        <strong>Research Evidence:</strong><br>
+        • Extends lifespan in multiple species<br>
+        • Reduces age-related diseases<br>
+        • Improves immune function in elderly<br><br>
+        
+        Want specific dosing recommendations for your goals?`
+    },
+    
+    ta65: {
+        title: "🧬 TA-65 Telomerase Activation",
+        content: `<strong>TA-65 - Telomerase Activating Compound:</strong><br><br>
+        
+        <strong>Mechanism of Action:</strong><br>
+        • Activates telomerase enzyme<br>
+        • Extends telomere length<br>
+        • Improves cellular vitality<br>
+        • Enhances immune function<br><br>
+        
+        <strong>Dosing Protocols:</strong><br>
+        • Standard: 250-500 units daily<br>
+        • High-dose: 1000 units daily<br>
+        • Timing: With or without food<br>
+        • Duration: Minimum 6-12 months for benefits<br><br>
+        
+        <strong>Clinical Benefits:</strong><br>
+        • Improved immune markers<br>
+        • Enhanced cellular energy<br>
+        • Better skin and hair quality<br>
+        • Increased vitality and stamina<br><br>
+        
+        <strong>Monitoring:</strong><br>
+        • Telomere length testing (baseline & 6-month)<br>
+        • Immune function panels<br>
+        • General health biomarkers<br><br>
+        
+        <strong>Safety Profile:</strong><br>
+        • Generally well tolerated<br>
+        • Rare side effects<br>
+        • No known drug interactions<br><br>
+        
+        Interested in starting a TA-65 protocol?`
+    },
+    
+    biomarkers: {
+        title: "📊 Key Health Biomarkers",
+        content: `<strong>Essential Biomarkers for Optimization:</strong><br><br>
+        
+        <strong>Inflammatory Markers:</strong><br>
+        • CRP: &lt;1.0 mg/L (optimal &lt;0.5)<br>
+        • IL-6: &lt;1.8 pg/mL<br>
+        • TNF-α: &lt;8.1 pg/mL<br>
+        • Homocysteine: &lt;7 μmol/L<br><br>
+        
+        <strong>Metabolic Panel:</strong><br>
+        • Fasting glucose: 80-90 mg/dL<br>
+        • HbA1c: &lt;5.7% (optimal &lt;5.4%)<br>
+        • Insulin: &lt;5 μIU/mL<br>
+        • HOMA-IR: &lt;1.0<br><br>
+        
+        <strong>Lipid Optimization:</strong><br>
+        • Total cholesterol: 180-220 mg/dL<br>
+        • HDL: &gt;60 mg/dL<br>
+        • Triglycerides: &lt;100 mg/dL<br>
+        • Omega-3 index: &gt;8%<br><br>
+        
+        <strong>Longevity Markers:</strong><br>
+        • IGF-1: 150-200 ng/mL<br>
+        • DHEA-S: Age-appropriate ranges<br>
+        • NAD+ levels: Via specialized testing<br>
+        • Telomere length: Above age median<br><br>
+        
+        Which biomarkers would you like to focus on optimizing?`
+    }
+};
+
+// AI Chat System Functions
+function askAIQuestion(topic) {
+    playClickSound();
+    const knowledge = aiTherapyKnowledge[topic];
+    if (knowledge) {
+        addMessageToChat(`Tell me about ${knowledge.title.replace(/🔥|⏳|📋|💊|🧬|📊/, '').trim()}`, true);
+        setTimeout(() => {
+            addMessageToChat(knowledge.content, false, knowledge.title);
+        }, 500);
+    }
+}
+
+function handleAIChatInput(event) {
+    if (event.key === 'Enter') {
+        sendAIMessage();
+    }
+}
+
+function sendAIMessage() {
+    playClickSound();
+    const input = document.getElementById('aiChatInput');
+    const message = input.value.trim();
+    
+    if (message === '') return;
+    
+    // Add user message
+    addMessageToChat(message, true);
+    
+    // Clear input
+    input.value = '';
+    
+    // Generate AI response
+    setTimeout(() => {
+        const response = generateAIResponse(message);
+        addMessageToChat(response.content, false, response.title);
+    }, 800);
+}
+
+function addMessageToChat(message, isUser, title = '') {
+    const chatMessages = document.getElementById('aiChatMessages');
+    const messageDiv = document.createElement('div');
+    
+    if (isUser) {
+        messageDiv.innerHTML = `
+            <div style="display: flex; align-items: flex-start; gap: 10px; margin-bottom: 15px; justify-content: flex-end;">
+                <div style="background: var(--pharma-orange); color: white; padding: 10px 15px; border-radius: 15px; border-radius: 15px 15px 5px 15px; max-width: 70%;">
+                    ${message}
+                </div>
+                <div style="width: 30px; height: 30px; background: var(--win95-gray); border: 2px inset var(--win95-gray); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 12px; flex-shrink: 0;">👤</div>
+            </div>
+        `;
+    } else {
+        messageDiv.innerHTML = `
+            <div style="display: flex; align-items: flex-start; gap: 10px; margin-bottom: 15px;">
+                <div style="width: 30px; height: 30px; background: var(--pharma-orange); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-weight: bold; font-size: 12px; flex-shrink: 0;">AI</div>
+                <div style="background: var(--pharma-light-orange); padding: 10px 15px; border-radius: 15px; border-radius: 15px 15px 15px 5px; max-width: 80%;">
+                    ${title ? `<strong style="color: var(--pharma-orange);">${title}</strong><br><br>` : ''}
+                    ${message}
+                </div>
+            </div>
+        `;
+    }
+    
+    chatMessages.appendChild(messageDiv);
+    chatMessages.scrollTop = chatMessages.scrollHeight;
+}
+
+function generateAIResponse(question) {
+    const lowerQuestion = question.toLowerCase();
+    
+    // Check for specific topics
+    if (lowerQuestion.includes('inflammation') || lowerQuestion.includes('inflammatory')) {
+        return aiTherapyKnowledge.inflammation;
+    } else if (lowerQuestion.includes('longevity') || lowerQuestion.includes('aging') || lowerQuestion.includes('anti-aging')) {
+        return aiTherapyKnowledge.longevity;
+    } else if (lowerQuestion.includes('protocol') || lowerQuestion.includes('treatment')) {
+        return aiTherapyKnowledge.protocols;
+    } else if (lowerQuestion.includes('rapamycin') || lowerQuestion.includes('mtor')) {
+        return aiTherapyKnowledge.rapamycin;
+    } else if (lowerQuestion.includes('ta-65') || lowerQuestion.includes('ta65') || lowerQuestion.includes('telomerase')) {
+        return aiTherapyKnowledge.ta65;
+    } else if (lowerQuestion.includes('biomarker') || lowerQuestion.includes('lab') || lowerQuestion.includes('test')) {
+        return aiTherapyKnowledge.biomarkers;
+    } else if (lowerQuestion.includes('curcumin')) {
+        return {
+            title: "💛 Curcumin Therapy",
+            content: `<strong>Curcumin - Natural Anti-Inflammatory:</strong><br><br>
+            
+            <strong>Mechanism:</strong><br>
+            • Inhibits NF-κB inflammatory pathway<br>
+            • Reduces COX-2 and LOX enzymes<br>
+            • Antioxidant and neuroprotective effects<br><br>
+            
+            <strong>Optimal Dosing:</strong><br>
+            • Standard: 500-1000mg daily<br>
+            • With Piperine: 95% curcuminoids + 5mg piperine<br>
+            • Timing: With meals for absorption<br>
+            • Forms: Liposomal or phytosome for bioavailability<br><br>
+            
+            <strong>Clinical Benefits:</strong><br>
+            • Reduces CRP and inflammatory markers<br>
+            • Joint pain and arthritis relief<br>
+            • Cognitive protection<br>
+            • Cardiovascular benefits<br><br>
+            
+            Would you like a curcumin-based anti-inflammatory protocol?`
+        };
+    } else if (lowerQuestion.includes('omega') || lowerQuestion.includes('fish oil')) {
+        return {
+            title: "🐟 Omega-3 Optimization",
+            content: `<strong>Omega-3 Fatty Acids - Essential Anti-Inflammatory:</strong><br><br>
+            
+            <strong>Key Components:</strong><br>
+            • EPA (Eicosapentaenoic Acid): Anti-inflammatory<br>
+            • DHA (Docosahexaenoic Acid): Brain health<br>
+            • Target Omega-3 Index: >8%<br><br>
+            
+            <strong>Dosing Guidelines:</strong><br>
+            • Total EPA+DHA: 2-3g daily<br>
+            • EPA:DHA ratio: 2:1 for inflammation<br>
+            • Timing: With meals to reduce oxidation<br>
+            • Quality: Third-party tested for purity<br><br>
+            
+            <strong>Clinical Benefits:</strong><br>
+            • Reduces inflammatory cytokines<br>
+            • Supports cardiovascular health<br>
+            • Enhances cognitive function<br>
+            • Improves mood and mental health<br><br>
+            
+            Need guidance on selecting high-quality omega-3 supplements?`
+        };
+    } else {
+        return {
+            title: "🤖 AI Therapy Analysis",
+            content: `<strong>Thank you for your question!</strong><br><br>
+            
+            I specialize in evidence-based guidance for:<br>
+            • <strong>Chronic inflammation</strong> management<br>
+            • <strong>Longevity</strong> and anti-aging protocols<br>
+            • <strong>Therapeutic interventions</strong> (Rapamycin, TA-65)<br>
+            • <strong>Biomarker optimization</strong><br>
+            • <strong>Protocol development</strong><br><br>
+            
+            For the most accurate guidance, please ask about specific topics like:<br>
+            • "How do I reduce inflammation?"<br>
+            • "What are the best longevity interventions?"<br>
+            • "Tell me about rapamycin dosing"<br>
+            • "Which biomarkers should I track?"<br><br>
+            
+            Or click one of the topic buttons above for detailed information!<br><br>
+            
+            <em>Always consult healthcare providers before starting new therapies.</em>`
+        };
+    }
+}
+
+// Draggable Windows
+function makeDraggable(element) {
+    let isDragging = false;
+    let currentX = 0;
+    let currentY = 0;
+    let initialX = 0;
+    let initialY = 0;
+    
+    const titleBar = element.querySelector('.title-bar');
+    
+    titleBar.addEventListener('mousedown', function(e) {
+        if (e.target.closest('.title-bar-controls')) return;
+        
+        isDragging = true;
+        initialX = e.clientX - element.offsetLeft;
+        initialY = e.clientY - element.offsetTop;
+        
+        element.style.zIndex = Math.max(...Array.from(document.querySelectorAll('.window')).map(w => parseInt(w.style.zIndex) || 0)) + 1;
+    });
+    
+    document.addEventListener('mousemove', function(e) {
+        if (!isDragging) return;
+        
+        e.preventDefault();
+        currentX = e.clientX - initialX;
+        currentY = e.clientY - initialY;
+        
+        // Keep window within viewport
+        const maxX = window.innerWidth - element.offsetWidth;
+        const maxY = window.innerHeight - element.offsetHeight - 28; // Account for taskbar
+        
+        currentX = Math.max(0, Math.min(currentX, maxX));
+        currentY = Math.max(0, Math.min(currentY, maxY));
+        
+        element.style.left = currentX + 'px';
+        element.style.top = currentY + 'px';
+    });
+    
+    document.addEventListener('mouseup', function() {
+        isDragging = false;
+    });
+}
+
+// Add styles for checkboxes and animations
+const additionalStyles = `
+<style>
+.win95-checkbox {
+    display: block;
+    margin: 6px 0;
+    font-size: 13px;
+    cursor: pointer;
+    user-select: none;
+}
+
+.win95-checkbox input[type="checkbox"] {
+    margin-right: 8px;
+    transform: scale(1.2);
+}
+
+.cursor-blink {
+    animation: blink 1s infinite;
+}
+
+@keyframes blink {
+    0%, 50% { opacity: 1; }
+    51%, 100% { opacity: 0; }
+}
+
+@keyframes windowClose {
+    from {
+        opacity: 1;
+        transform: scale(1);
+    }
+    to {
+        opacity: 0;
+        transform: scale(0.8);
+    }
+}
+
+.symptom-category {
+    margin-bottom: 20px;
+    padding: 15px;
+    background: white;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+}
+
+.checkbox-group {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 4px;
+}
+
+.form-section {
+    background: white;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    padding: 15px;
+}
+</style>
+`;
+
+document.head.insertAdjacentHTML('beforeend', additionalStyles);
+
+console.log('🏥 Inflamm AI Therapy Assistant Ready');
+console.log('💊 Windows 95 Pharmaceutical Interface Loaded');
+console.log('🔬 All interactive systems online'); 
