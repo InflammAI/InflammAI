@@ -1,16 +1,17 @@
-## Hi there 👋
+INFLAMM AI – Advanced Therapy Assistant
 
-<!--
-**InflammAI/InflammAI** is a ✨ _special_ ✨ repository because its `README.md` (this file) appears on your GitHub profile.
+INFLAMM AI is a dual-interface medical application blending modern AI therapy management with nostalgic retro desig. INFLAMM AI provides AI-powered recommendations, protocol generation, and comprehensive patient management tools, while also accelerating the discovery of next-generation anti-inflammatory therapies.
 
-Here are some ideas to get you started:
+🖥️ Key Features
 
-- 🔭 I’m currently working on ...
-- 🌱 I’m currently learning ...
-- 👯 I’m looking to collaborate on ...
-- 🤔 I’m looking for help with ...
-- 💬 Ask me about ...
-- 📫 How to reach me: ...
-- 😄 Pronouns: ...
-- ⚡ Fun fact: ...
--->
+🖱️ Windows 95 Desktop Simulation with taskbar, start menu, and window management
+
+🤖 AI-Powered Therapy Assistant for personalized treatment recommendations
+
+🧪 Symptom Assessment Tool to analyze inflammation markers
+
+📋 Protocol Generator for optimized daily treatment routines
+
+📊 Clinical Dashboard with biomarkers, research updates, and status monitoring
+
+🪟 Interactive Window Management (minimize, maximize, close, drag & drop)
